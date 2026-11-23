@@ -92,6 +92,7 @@ h2 { font-size: clamp(30px, 3.2vw, 48px); line-height: 1.55; letter-spacing: -1.
 footer { margin: 0 var(--gutter); padding: 36px 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 footer .logo { font-size: 36px; }
 footer p, footer > span { font-size: 12px; color: var(--muted); }
+footer .footer-tagline { margin: 0; padding-left: 12px; border-left: 3px solid var(--green); color: var(--ink); font: 700 14px/1.6 Arial, sans-serif; letter-spacing: .3px; }
 dialog { width: calc(100% - 32px); max-width: 550px; max-height: calc(100dvh - 32px); overflow-y: auto; border: 1px solid var(--ink); border-top: 7px solid var(--green); background: var(--paper); padding: 44px; color: var(--ink); }
 dialog::backdrop { background: #000b; backdrop-filter: blur(5px); }
 dialog h2 { font-size: 30px; margin: 28px 0 18px; }
@@ -187,6 +188,7 @@ body.modal-open { overflow: hidden; }
   .closing-mark { top: 90px; right: -12px; font-size: 280px; }
   footer { flex-wrap: wrap; gap: 22px; padding: 28px 0; }
   footer p { display: none; }
+  footer .footer-tagline { display: block; flex-basis: 100%; order: 1; }
   dialog { padding: 34px 24px 25px; }
   dialog h2 { font-size: 26px; }
   dialog .button { width: 100%; gap: 12px; }
