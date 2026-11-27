@@ -52,3 +52,25 @@
 5. 尚待檢查實際收錄、Google 選定的 Canonical、搜尋摘要、Core Web Vitals，以及實體裝置與舊版瀏覽器的 Favicon 相容性。持續觀察 Search Console，並在未來新增獨立內容頁時同步更新 Sitemap。
 
 目前保留單一 H1、各段 H2 與倒數 H3；加入視窗的 H2 作為獨立對話框標題。兩張照片均已有描述實際畫面的 Alt，沒有堆疊地名關鍵字。這次不改動可見文字、CSS 或 JavaScript，以保持既有視覺與功能。
+
+## Google Analytics 4 與隱私選擇
+
+`analytics.js` 使用 Google 官方 gtag.js，評估 ID 為 `G-1BD5BCB9DE`（公開設定值，不是密鑰），沒有安裝 GTM 容器。初次訪問顯示繁體中文告知，接受、拒絕皆可操作；關閉告知不代表同意。頁尾「隱私與分析 Cookie 設定」可重新開啟並撤回。
+
+- 採基本同意模式：未同意、拒絕或偏好過期時，不載入 gtag.js，也不發送分析或未同意的無 Cookie ping。
+- 只有 HTTPS 正式來源 `https://neal1106-source.github.io`，且路徑為 `/pace-club/` 或 `/pace-club/index.html` 時才可能載入。本機、預覽網域及其他路徑均不會傳送正式分析流量。
+- 為保守避免網址中的個資，含任何查詢參數或未知錨點的初始網址不載入 GA4；只允許空錨點、`#main`、`#about`、`#weekly`。因此 UTM 等查詢流量目前也不追蹤。
+- 只主動送出固定 `page_view`，不讀取姓名、Email、電話、表單或使用者 ID；分析用頁面網址固定為 Canonical，來源網址為空，不傳送查詢參數或錨點。不要在未審查下新增自訂事件或使用者屬性。
+- 同意前廣告、分析儲存皆預設 denied；同意後只開放 analytics_storage，持續禁止 ad_storage、ad_user_data、ad_personalization、Google signals 與廣告個人化。
+- 偏好採具版本的 `pace-club:analytics-consent:v1` 本機儲存，最長 180 天；GA Cookie 使用 `pace_club` 前綴、僅限本網站 `/pace-club/` 路徑及目前主機。Cookie 不延長原有到期時間。
+- 撤回／由同意改為拒絕時，先設定官方 `ga-disable-G-1BD5BCB9DE`，清除本網站前綴的分析 Cookie，再重新載入以卸載已執行的 Google 程式。保留拒絕偏好，其他分頁也會回應本機儲存異動。撤回不會刪除 Google 已收到的歷史資料或取消先前已送出的網路請求。
+- 儲存不可用時仍可拒絕，預設不追蹤；接受僅限目前頁面。撤回後保持停用且不強制重載，避免舊同意被重新啟用；請在儲存恢復後重新整理並重新選擇。Google 腳本若遭廣告阻擋器攔截，其他功能仍可操作。
+
+### GA4 部署後驗收
+
+1. 在 GA4 管理後台確認評估 ID、正式網域及資料串流；關閉不需要的「加強型評估」（例如站內搜尋、表單互動、出站連結）、使用者提供的資料收集與廣告功能。本次未登入或改動 GA4 後台設定；遠端串流設定仍需由管理者核對。
+2. 本機測試以攔截並模擬 Google 腳本的方式檢查接受、拒絕、撤回、持久化、Cookie 清除及網域限制；不向正式 GA4 傳送測試資料。模擬測試不等於真實 Google 收件驗證。
+3. 部署後用瀏覽器 Network 與 Google Tag Assistant 確認：未同意／拒絕時無 gtag.js 或 collect；接受後只載入一次；撤回後停止 collect 且本站分析 Cookie 消失。檢查 payload 沒有姓名、Email、電話、網址查詢或自訂輸入文字。
+4. 經同意的正式訪問才可在 GA4 即時報表確認；另檢查實體手機、Safari、無痕模式、廣告阻擋器、儲存限制與跨分頁撤回。GA4 回報可能延遲，且受訪客同意與阻擋設定影響。
+
+官方依據：[基本同意模式](https://developers.google.com/tag-platform/security/guides/consent?consentmode=basic)、[停用與隱私設定](https://developers.google.com/tag-platform/security/guides/privacy)、[GA4 設定參數](https://developers.google.com/analytics/devguides/collection/ga4/reference/config)。

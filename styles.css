@@ -282,6 +282,28 @@ body.modal-open { overflow: hidden; }
   .poster-bottom { flex-direction: column; }
   .poster-tag { bottom: 98px; }
 }
+.privacy-settings { margin: 0 var(--gutter) 28px; }
+.privacy-settings button { background: transparent; color: var(--ink); border: 1px solid var(--ink); padding: 10px 16px; font-size: 14px; }
+.privacy-panel { position: fixed; z-index: 6; bottom: 20px; left: var(--gutter); right: var(--gutter); max-width: 900px; max-height: 55dvh; overflow-y: auto; margin: auto; padding: 24px; border: 1px solid var(--ink); border-top: 4px solid var(--green); background: white; box-shadow: 0 8px 40px #0003; }
+.privacy-panel[hidden], .privacy-actions [hidden] { display: none; }
+.privacy-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.privacy-heading h2 { font-size: 24px; margin: 0; }
+.privacy-heading button { border: 0; background: transparent; font-size: 28px; flex-shrink: 0; }
+.privacy-panel p { font-size: 14px; line-height: 1.9; margin: 14px 0; }
+.privacy-panel a { text-decoration: underline; text-underline-offset: 3px; }
+.privacy-panel summary { min-height: 44px; padding: 10px 0; font-size: 14px; font-weight: 600; cursor: pointer; }
+.privacy-panel summary:focus-visible { outline: 3px solid #578000; outline-offset: 3px; }
+.privacy-panel .privacy-status { font-weight: 600; }
+.privacy-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.privacy-actions button { flex: 1 1 180px; padding: 12px 16px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); font-size: 15px; font-weight: 600; }
+.privacy-actions button:hover { background: var(--green); }
+@media (max-width: 700px) {
+  .privacy-panel { bottom: 12px; left: 16px; right: 16px; padding: 18px; max-height: 60dvh; }
+  .privacy-heading h2 { font-size: 22px; }
+  .privacy-panel p { font-size: 16px; }
+  .privacy-actions { gap: 10px; }
+  .privacy-actions button { flex-basis: 100%; }
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
