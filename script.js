@@ -129,6 +129,7 @@ document.querySelector('#calendar').addEventListener('click', () => {
   link.download = 'PACE-Club-週三團練.ics';
   document.body.appendChild(link);
   link.click();
+  document.dispatchEvent(new Event('pace:calendar-downloaded'));
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
   document.querySelector('#calendar-status').textContent = '已準備下載，請開啟 .ics 檔案，加入你的行事曆。';

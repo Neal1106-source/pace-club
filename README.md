@@ -74,3 +74,35 @@
 4. 經同意的正式訪問才可在 GA4 即時報表確認；另檢查實體手機、Safari、無痕模式、廣告阻擋器、儲存限制與跨分頁撤回。GA4 回報可能延遲，且受訪客同意與阻擋設定影響。
 
 官方依據：[基本同意模式](https://developers.google.com/tag-platform/security/guides/consent?consentmode=basic)、[停用與隱私設定](https://developers.google.com/tag-platform/security/guides/privacy)、[GA4 設定參數](https://developers.google.com/analytics/devguides/collection/ga4/reference/config)。
+
+## 跑團招募自訂事件
+
+評估 ID 及原有同意機制不變。所有自訂事件在傳送前重新檢查正式網域／路徑、原有安全網址限制、有效同意及 GA 停用旗標；未同意前的操作不會暫存或補送。參數使用固定白名單，不傳送按鈕文字、目標網址、姓名、Email、電話或其他使用者輸入。
+
+| 實際操作 | 事件 | 固定參數 |
+| --- | --- | --- |
+| 導覽列「加入我們」 | `join_club_click` | `button_location: navigation` |
+| 首頁「加入週三的我們」 | `join_club_click` | `button_location: hero` |
+| 頁面底部招募區「加入 PACE Club」 | `join_club_click` | `button_location: closing` |
+| 團練「我想一起跑」 | `join_run_click` | `button_location: weekly` |
+| 團練資訊面板可視比例至少 50% | `weekly_run_view` | `section_name: weekly_run`, `visibility_percent: 50` |
+| 「在地圖查看集合地點」 | `map_click` | `button_location: weekly` |
+| 成功啟動 .ics 行事曆下載 | `calendar_download` | `button_location: join_dialog`, `file_format: ics` |
+
+目前沒有社群連結，因此未新增連結或 `social_click`。底部招募按鈕實際位於 `.closing`，並非 HTML footer。`calendar_download` 代表瀏覽器開始下載，不代表使用者已儲存或匯入行事曆；點擊加入按鈕也不代表完成報名。
+
+`weekly_run_view` 使用 IntersectionObserver 觀察 `#weekly .weekly-content`（包含倒數、集合資訊與按鈕的面板，不含側邊海報及外圍留白），門檻為該面板面積的 50%，每次頁面載入只送一次。未同意時不觀察；同意後才開始觀察目前畫面。撤回後停止觀察；重新同意不會重複記錄本頁已送過的曝光。背景或過小的可視視窗若無法容納面板一半，就不會達到門檻；不支援 IntersectionObserver 的瀏覽器不送出虛假的曝光事件。
+
+點擊採單一委派監聽器，重新同意不會重複綁定。下載則由原有下載函式在 `link.click()` 後發送內部通知，不同時監聽下載按鈕的 click，以避免同一次下載記錄兩次。重複的獨立操作仍會各記錄一次。
+
+### 網頁標題與 page_view 檢查
+
+程式沒有動態修改 `document.title`，沒有重複初始化；`send_page_view: false` 搭配一次手動 `page_view`。既有 GA4 `page_title` 為「PACE Club｜新竹跑步社群」，而 SEO Title 為「PACE Club｜新竹跑步社群・每週三交大操場團練」。本次自訂事件沿用既有 GA4 標題，未改動 SEO 或原有 page_view。
+
+僅憑本機程式不能斷言報表有重複 page_view：歷史版本資料、遠端標籤或 GA4 加強型評估的瀏覽器歷史事件都需另外核對。Google 文件說明，`send_page_view: false` 不會停用後台設定的歷史變更 page_view；請在 GA4 資料串流中核對該選項，並以 Tag Assistant／DebugView 檢查每次導覽的事件與標題。本次沒有登入或修改 GA4 後台。
+
+### 招募報表後續設定
+
+部署驗收後，在 GA4 註冊事件範圍的自訂維度 `button_location`，需要時另註冊 `section_name`。可用 `weekly_run_view`、加入點擊與 `calendar_download` 分析同意訪客的招募漏斗；不要把點擊率當作實際報名完成率。關鍵事件的標記與漏斗報表需由 GA4 管理者另行設定，本次未操作後台。Google 自動產生的 `click`、`file_download` 等事件與本次自訂事件名稱不同，報表不可不加區分直接相加。
+
+參考：[Google 自訂事件](https://developers.google.com/analytics/devguides/collection/ga4/events)、[page_view 與歷史變更設定](https://developers.google.com/analytics/devguides/collection/ga4/views)。

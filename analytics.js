@@ -18,6 +18,8 @@
   let loaded = false;
   let storageAvailable = true;
   let expiryTimer;
+  let weeklyObserver;
+  let weeklyRecorded = false;
   window[disableKey] = true;
 
   function readChoice() {
@@ -35,6 +37,67 @@
     }
   }
   let choice = readChoice();
+
+  function canTrackRecruitment() {
+    const current = storageAvailable ? readChoice() : choice;
+    return production && safePageUrl && loaded && !window[disableKey]
+      && current?.value === 'granted' && current.expires > Date.now()
+      && typeof window.gtag === 'function';
+  }
+
+  function trackRecruitment(name, parameters) {
+    if (!canTrackRecruitment()) return false;
+    // Only fixed event names and allowlisted values below; no link URLs,
+    // button text, user input, referrers, or current URL enter these events.
+    window.gtag('event', name, {
+      send_to: measurementId,
+      page_location: canonicalUrl,
+      page_title: 'PACE Club｜新竹跑步社群',
+      page_referrer: '',
+      ...parameters
+    });
+    return true;
+  }
+
+  function startRecruitmentTracking() {
+    if (weeklyRecorded || weeklyObserver || !canTrackRecruitment()
+      || !('IntersectionObserver' in window)) return;
+    // Observe the actual information panel rather than the taller section
+    // (which also includes the side poster and outer whitespace).
+    const information = document.querySelector('#weekly .weekly-content');
+    if (!information) return;
+    weeklyObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!weeklyRecorded && entry.isIntersecting && entry.intersectionRatio >= 0.5
+          && trackRecruitment('weekly_run_view', { section_name: 'weekly_run', visibility_percent: 50 })) {
+          weeklyRecorded = true;
+          weeklyObserver.disconnect();
+          weeklyObserver = undefined;
+          break;
+        }
+      }
+    }, { threshold: [0, 0.5] });
+    weeklyObserver.observe(information);
+  }
+
+  const recruitmentButtons = new Map([
+    [document.querySelector('#site-nav .nav-join'), ['join_club_click', 'navigation']],
+    [document.querySelector('.hero-copy [data-join]'), ['join_club_click', 'hero']],
+    [document.querySelector('.closing [data-join]'), ['join_club_click', 'closing']],
+    [document.querySelector('.event-actions [data-join]'), ['join_run_click', 'weekly']],
+    [document.querySelector('.event-actions .text-link'), ['map_click', 'weekly']]
+  ].filter(([element]) => element));
+  // One delegated listener per page: reaccepting consent never binds twice.
+  document.addEventListener('click', event => {
+    const control = event.target instanceof Element ? event.target.closest('button, a') : null;
+    const tracked = recruitmentButtons.get(control);
+    if (tracked) trackRecruitment(tracked[0], { button_location: tracked[1] });
+  });
+  // The download handler signals only after it has initiated the .ics download.
+  // Do not also track the calendar button's click, which would double-count it.
+  document.addEventListener('pace:calendar-downloaded', () => {
+    trackRecruitment('calendar_download', { button_location: 'join_dialog', file_format: 'ics' });
+  });
 
   function clearAnalyticsCookies() {
     // Only this integration's cookie prefix; leave other GitHub Pages projects alone.
@@ -71,6 +134,8 @@
   function stopAnalytics() {
     // Set opt-out BEFORE any unload handlers can send another event.
     window[disableKey] = true;
+    weeklyObserver?.disconnect();
+    weeklyObserver = undefined;
     clearTimeout(expiryTimer);
     clearAnalyticsCookies();
     if (loaded) {
@@ -100,6 +165,7 @@
       window[disableKey] = false;
       clearTimeout(expiryTimer);
       checkExpiry();
+      startRecruitmentTracking();
       return;
     }
     loaded = true;
@@ -143,6 +209,7 @@
     document.head.appendChild(tag);
     // Long timeouts exceed browser limits: check expiry at most once a minute.
     checkExpiry();
+    startRecruitmentTracking();
   }
 
   function saveChoice(value) {
