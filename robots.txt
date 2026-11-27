@@ -1,0 +1,7 @@
+# Project Pages serves this file at /pace-club/robots.txt.
+# Crawlers use /robots.txt at the HOST root instead.
+# To activate these directives, merge them into the user Pages site's root robots.txt.
+User-agent: *
+Allow: /pace-club/
+
+Sitemap: https://neal1106-source.github.io/pace-club/sitemap.xml

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>PACE Club</title>
+  <rect width="64" height="64" rx="8" fill="#111"/>
+  <path fill="#c4ff00" fill-rule="evenodd" d="M18 12h18c11 0 16 6 16 16S47 44 36 44h-7v10H18V12zm11 10v12h6c4 0 6-2 6-6s-2-6-6-6h-6z"/>
+</svg>
