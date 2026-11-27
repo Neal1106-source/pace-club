@@ -53,56 +53,73 @@
 
 目前保留單一 H1、各段 H2 與倒數 H3；加入視窗的 H2 作為獨立對話框標題。兩張照片均已有描述實際畫面的 Alt，沒有堆疊地名關鍵字。這次不改動可見文字、CSS 或 JavaScript，以保持既有視覺與功能。
 
-## Google Analytics 4 與隱私選擇
+## GA4 穩定性與隱私修正
 
-`analytics.js` 使用 Google 官方 gtag.js，評估 ID 為 `G-1BD5BCB9DE`（公開設定值，不是密鑰），沒有安裝 GTM 容器。初次訪問顯示繁體中文告知，接受、拒絕皆可操作；關閉告知不代表同意。頁尾「隱私與分析 Cookie 設定」可重新開啟並撤回。
+評估 ID：`G-1BD5BCB9DE`。僅 HTTPS 正式來源 `https://neal1106-source.github.io`，路徑為 `/pace-club/` 或 `/pace-club/index.html`，且有效同意分析後，才載入 Google 官方 gtag.js。沒有 GTM 容器，不增加套件。未同意／拒絕／過期時不載入 Google 分析程式。
 
-- 採基本同意模式：未同意、拒絕或偏好過期時，不載入 gtag.js，也不發送分析或未同意的無 Cookie ping。
-- 只有 HTTPS 正式來源 `https://neal1106-source.github.io`，且路徑為 `/pace-club/` 或 `/pace-club/index.html` 時才可能載入。本機、預覽網域及其他路徑均不會傳送正式分析流量。
-- 為保守避免網址中的個資，含任何查詢參數或未知錨點的初始網址不載入 GA4；只允許空錨點、`#main`、`#about`、`#weekly`。因此 UTM 等查詢流量目前也不追蹤。
-- 只主動送出固定 `page_view`，不讀取姓名、Email、電話、表單或使用者 ID；分析用頁面網址固定為 Canonical，來源網址為空，不傳送查詢參數或錨點。不要在未審查下新增自訂事件或使用者屬性。
-- 同意前廣告、分析儲存皆預設 denied；同意後只開放 analytics_storage，持續禁止 ad_storage、ad_user_data、ad_personalization、Google signals 與廣告個人化。
-- 偏好採具版本的 `pace-club:analytics-consent:v1` 本機儲存，最長 180 天；GA Cookie 使用 `pace_club` 前綴、僅限本網站 `/pace-club/` 路徑及目前主機。Cookie 不延長原有到期時間。
-- 撤回／由同意改為拒絕時，先設定官方 `ga-disable-G-1BD5BCB9DE`，清除本網站前綴的分析 Cookie，再重新載入以卸載已執行的 Google 程式。保留拒絕偏好，其他分頁也會回應本機儲存異動。撤回不會刪除 Google 已收到的歷史資料或取消先前已送出的網路請求。
-- 儲存不可用時仍可拒絕，預設不追蹤；接受僅限目前頁面。撤回後保持停用且不強制重載，避免舊同意被重新啟用；請在儲存恢復後重新整理並重新選擇。Google 腳本若遭廣告阻擋器攔截，其他功能仍可操作。
+### 初始化與重試
 
-### GA4 部署後驗收
+`analytics.js` 有 idle、loading、ready、failed 四種狀態，可於 `document.documentElement.dataset.gaState` 檢查。成功須實際執行 Google 程式；HTTP 200 或存在 script 元素不單獨當作成功。
 
-1. 在 GA4 管理後台確認評估 ID、正式網域及資料串流；關閉不需要的「加強型評估」（例如站內搜尋、表單互動、出站連結）、使用者提供的資料收集與廣告功能。本次未登入或改動 GA4 後台設定；遠端串流設定仍需由管理者核對。
-2. 本機測試以攔截並模擬 Google 腳本的方式檢查接受、拒絕、撤回、持久化、Cookie 清除及網域限制；不向正式 GA4 傳送測試資料。模擬測試不等於真實 Google 收件驗證。
-3. 部署後用瀏覽器 Network 與 Google Tag Assistant 確認：未同意／拒絕時無 gtag.js 或 collect；接受後只載入一次；撤回後停止 collect 且本站分析 Cookie 消失。檢查 payload 沒有姓名、Email、電話、網址查詢或自訂輸入文字。
-4. 經同意的正式訪問才可在 GA4 即時報表確認；另檢查實體手機、Safari、無痕模式、廣告阻擋器、儲存限制與跨分頁撤回。GA4 回報可能延遲，且受訪客同意與阻擋設定影響。
+- 每頁最多三次載入嘗試，失敗後冷卻兩秒，透過隱私視窗「重試載入分析」手動重試；再次接受 Cookie 不會掩蓋錯誤或無限重試。
+- 12 秒逾時會保留失敗提示；重試以重新整理進行，避免仍在途中的 Google 腳本與新腳本重複執行。儲存受限時要求先重新整理、重新選擇。
+- 同一頁只建立一次 gtag 佇列與 config；page_view 在 ready 後只主動送一次。接受同意後、載入中發生的事件最多暫存 30 筆，成功後才送；拒絕、撤回或過期會丟棄，未同意前的操作不補送。
+- 所有全域隱私、網址、標題、Cookie 與 `send_page_view: false` 設定都先以 `gtag('set', ...)` 套用，再初始化及授予分析儲存同意，避免 Google 初始化觸發器先使用預設設定。
 
-官方依據：[基本同意模式](https://developers.google.com/tag-platform/security/guides/consent?consentmode=basic)、[停用與隱私設定](https://developers.google.com/tag-platform/security/guides/privacy)、[GA4 設定參數](https://developers.google.com/analytics/devguides/collection/ga4/reference/config)。
+### 網址與 UTM 資料政策
 
-## 跑團招募自訂事件
+是否允許載入只看正式來源／路徑與同意，與查詢參數分開。啟用分析前會以 History API 清理**瀏覽器實際網址**，因為自動事件可能直接讀取 document.location。這不改動 SEO Title、Canonical 或 Sitemap；既有合法元素 ID 錨點保留，但不送進分析網址。
 
-評估 ID 及原有同意機制不變。所有自訂事件在傳送前重新檢查正式網域／路徑、原有安全網址限制、有效同意及 GA 停用旗標；未同意前的操作不會暫存或補送。參數使用固定白名單，不傳送按鈕文字、目標網址、姓名、Email、電話或其他使用者輸入。
+僅保留下表 UTM 欄位及已審核的公開詞彙。未知參數一律移除；每個欄位只接受單一值、最多 64 字元，值必須由核准詞彙以連字號、底線或空白組成。不接受任意姓名、Email、電話、網址、控制字元、百分比二次編碼或重複鍵值。大小寫嚴格使用小寫；全形偽裝字元不自動轉換為可接受值。
 
-| 實際操作 | 事件 | 固定參數 |
+| 欄位 | 核准詞彙 |
+| --- | --- |
+| utm_source | instagram, facebook, line, threads, youtube, google, newsletter, partner, direct |
+| utm_medium | social, organic, paid, cpc, email, referral, qr |
+| utm_campaign | pace, club, weekly, run, running, wednesday, hsinchu, recruitment, launch, spring, summer, autumn, winter, 2026, 2027, 新竹, 跑團, 團練, 跑步, 新手, 上班族, 週三 |
+| utm_content | bio, profile, link, post, story, reel, video, image, button, hero, footer, banner, variant, a, b, 1, 2, 3 |
+| utm_term | running, beginner, hsinchu, club, weekly, run, 新竹, 跑團, 跑步, 新手, 上班族 |
+
+範例：`?utm_source=instagram&utm_medium=paid_social&utm_campaign=weekly_run_2026&utm_content=story_a&utm_term=新竹_跑步`。新行銷詞彙需先審核，再擴充 `utmVocabulary`，不是任意 UTM 字串都視為安全。清理後的 UTM 亦映射至 GA4 campaign_source、campaign_medium、campaign_name、campaign_content、campaign_term。
+
+page_location 一律為本網站正式網址加上安全 UTM，不含錨點；page_referrer 為空；分析 page_title 統一與既有 SEO Title 相同，不動 HTML Title。廣告儲存、廣告使用者資料、廣告個人化皆 denied，Google signals 與廣告個人化旗標為 false；不傳送 user_id 或表單輸入。Google 自動收集使用者提供資料的遠端設定仍須依下述步驟關閉，不能把本機測試視為後台設定已完成。
+
+History API 在分析啟用時也會清理同站網址；hashchange、popstate 會同步乾淨的分析網址，不主動送 page_view。既有網頁內導覽、加入說明、地圖與下載功能保留。
+
+### 統一同意與撤回
+
+`pace-club:analytics-consent:v2` 的同一格式紀錄含 version、value、updatedAt、expires，最多 180 天。LocalStorage 為共享持久來源，SessionStorage 與記憶體作為受限儲存的備援；以較新的紀錄為準，同時發生且時間相同時拒絕優先，舊 Session 拒絕不會永久蓋過新同意。v1 設定只遷移一次，保留原有同意的到期時間；有舊拒絕旗標時先採拒絕，之後可重新同意。
+
+跨分頁接受、拒絕、撤回、清除或無效儲存紀錄會同步。撤回／過期先設 `ga-disable-G-1BD5BCB9DE`，停止曝光觀察、清掉待送事件，再清除實際分析 Cookie；持久儲存可用時重載以卸載 Google 監聽器。儲存受限時保留記憶體停用狀態，不重載回舊同意，仍可在本頁重新選擇。撤回不刪除已被 Google 接收的歷史資料，不能取消已送出的請求。
+
+Cookie 清理涵蓋 `_ga`、`_ga_1BD5BCB9DE` 與 `pace_club_` 前綴，在主機／網域及 `/`、`/pace-club`、`/pace-club/` 路徑逐一過期。保留其他 Property 的專屬 Cookie（如 `_ga_OTHER_PROPERTY`）。共用的舊 `_ga` 仍會清除。新 Cookie 使用主機限定與本站路徑、180 天到期且不滑動展延。
+
+### 招募事件
+
+| 操作 | 事件 | 固定參數 |
 | --- | --- | --- |
-| 導覽列「加入我們」 | `join_club_click` | `button_location: navigation` |
-| 首頁「加入週三的我們」 | `join_club_click` | `button_location: hero` |
-| 頁面底部招募區「加入 PACE Club」 | `join_club_click` | `button_location: closing` |
-| 團練「我想一起跑」 | `join_run_click` | `button_location: weekly` |
-| 團練資訊面板可視比例至少 50% | `weekly_run_view` | `section_name: weekly_run`, `visibility_percent: 50` |
-| 「在地圖查看集合地點」 | `map_click` | `button_location: weekly` |
-| 成功啟動 .ics 行事曆下載 | `calendar_download` | `button_location: join_dialog`, `file_format: ics` |
+| 導覽、首頁、底部招募按鈕 | join_club_click | button_location: navigation / hero / closing |
+| 團練「我想一起跑」 | join_run_click | button_location: weekly |
+| 團練資訊面板可視至少 50% | weekly_run_view | section_name: weekly_run, visibility_percent: 50；每頁一次 |
+| 查看集合地圖 | map_click | button_location: weekly |
+| 啟動 .ics 下載 | calendar_download | button_location: join_dialog, file_format: ics |
 
-目前沒有社群連結，因此未新增連結或 `social_click`。底部招募按鈕實際位於 `.closing`，並非 HTML footer。`calendar_download` 代表瀏覽器開始下載，不代表使用者已儲存或匯入行事曆；點擊加入按鈕也不代表完成報名。
+曝光觀察 `#weekly .weekly-content`，不含側邊海報與留白。不支援 IntersectionObserver 或視窗無法容納面板一半時不虛構曝光。重新同意不重複本頁已送過的曝光；未送出的曝光若因撤回丟棄，下次同意可再觀察。下載表示啟動，不代表已儲存／匯入；加入點擊不是報名完成。沒有社群連結，因此沒有新增 social_click。
 
-`weekly_run_view` 使用 IntersectionObserver 觀察 `#weekly .weekly-content`（包含倒數、集合資訊與按鈕的面板，不含側邊海報及外圍留白），門檻為該面板面積的 50%，每次頁面載入只送一次。未同意時不觀察；同意後才開始觀察目前畫面。撤回後停止觀察；重新同意不會重複記錄本頁已送過的曝光。背景或過小的可視視窗若無法容納面板一半，就不會達到門檻；不支援 IntersectionObserver 的瀏覽器不送出虛假的曝光事件。
+### 真實腳本測試與部署前驗收
 
-點擊採單一委派監聽器，重新同意不會重複綁定。下載則由原有下載函式在 `link.click()` 後發送內部通知，不同時監聽下載按鈕的 click，以避免同一次下載記錄兩次。重複的獨立操作仍會各記錄一次。
+測試在正式來源的隔離瀏覽器中映射本機檔案，**載入真實 gtag.js（HTTP 200）**，於網路層攔截 Google collect／其他分析端點，不把測試送進正式 GA4。收集請求因攔截而可能改走 google.com 備援，事件數以主要 google-analytics.com 端點核對，不能將人工阻擋引起的備援當作重複送達。
 
-### 網頁標題與 page_view 檢查
+已測：安全及敏感 UTM、未知參數、重複鍵、二次編碼、正常錨點、History API、帶測試敏感值的 referrer；初始化失敗／逾時重試、同意與跨分頁、到期、Cookie 名稱／網域／路徑清除；五個自訂事件、390／768／1440px、原有功能。初始及錨點切換的 page_view 應維持一次，分析標題一致，所有請求不應含測試敏感值。
 
-程式沒有動態修改 `document.title`，沒有重複初始化；`send_page_view: false` 搭配一次手動 `page_view`。既有 GA4 `page_title` 為「PACE Club｜新竹跑步社群」，而 SEO Title 為「PACE Club｜新竹跑步社群・每週三交大操場團練」。本次自訂事件沿用既有 GA4 標題，未改動 SEO 或原有 page_view。
+正式部署前須完成以下人工後台核對，再重跑真實腳本攔截測試；本次沒有操作後台：
 
-僅憑本機程式不能斷言報表有重複 page_view：歷史版本資料、遠端標籤或 GA4 加強型評估的瀏覽器歷史事件都需另外核對。Google 文件說明，`send_page_view: false` 不會停用後台設定的歷史變更 page_view；請在 GA4 資料串流中核對該選項，並以 Tag Assistant／DebugView 檢查每次導覽的事件與標題。本次沒有登入或修改 GA4 後台。
+1. GA4 → 管理 → 資料收集和修改 → 資料串流 → 選取 `G-1BD5BCB9DE` 網站串流。
+2. 「加強型評估」齒輪 → 網頁瀏覽進階設定 → 關閉「根據瀏覽器記錄事件變更的網頁」類似選項；網站由程式控制 page_view。不要在後台另建由其他事件複製 page_view 的規則。
+3. 關閉本站不需要的「站內搜尋」「表單互動」「影片參與」。若要只以自訂事件統計地圖／下載，關閉自動「外連點擊」「檔案下載」，避免在報表把 click／file_download 與 map_click／calendar_download 相加。scroll 可保留，但不作為招募曝光。
+4. 同一串流 → Google 代碼 → 配置代碼設定 → 顯示全部 → 「允許納入使用者提供的資料」：關閉允許功能與自動偵測 Email／電話／地址；核對 Google 代碼「管理自動事件偵測」與串流加強型評估一致。不要新增 GTM 或另一份安裝碼。
+5. 核對沒有額外關聯目的地／重複安裝／事件建立規則。需要報表維度時，在管理 → 自訂定義中註冊事件範圍的 button_location、section_name；需要時另設 visibility_percent 指標。關鍵事件與招募漏斗由管理者按業務定義設定。
+6. 部署後先以 DevTools／Tag Assistant 在「未同意」「拒絕」「撤回」狀態確認無新 collect。取得測試授權後，才允許少量測試實際送達 GA4，即時／DebugView 核對五個事件及 campaign 維度；本次測試未驗證 Google 收件。
+7. 另驗收實體手機、Safari、無痕、阻擋器、資料保留期限、清理網址的使用體驗，以及正式網路環境。不能把隔離 Chromium 測試視為所有瀏覽器皆通過。
 
-### 招募報表後續設定
-
-部署驗收後，在 GA4 註冊事件範圍的自訂維度 `button_location`，需要時另註冊 `section_name`。可用 `weekly_run_view`、加入點擊與 `calendar_download` 分析同意訪客的招募漏斗；不要把點擊率當作實際報名完成率。關鍵事件的標記與漏斗報表需由 GA4 管理者另行設定，本次未操作後台。Google 自動產生的 `click`、`file_download` 等事件與本次自訂事件名稱不同，報表不可不加區分直接相加。
-
-參考：[Google 自訂事件](https://developers.google.com/analytics/devguides/collection/ga4/events)、[page_view 與歷史變更設定](https://developers.google.com/analytics/devguides/collection/ga4/views)。
+參考：[Google 同意模式](https://developers.google.com/tag-platform/security/guides/consent)、[GA4 page_view](https://developers.google.com/analytics/devguides/collection/ga4/views)、[Google 代碼設定](https://support.google.com/analytics/answer/12131703?hl=zh-Hant)、[加強型評估](https://support.google.com/analytics/answer/9216061?hl=zh-Hant)。
