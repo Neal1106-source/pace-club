@@ -56,14 +56,63 @@ dialog.addEventListener('click', event => {
 });
 document.querySelector('#year').textContent = new Date().getFullYear();
 
-document.querySelector('#calendar').addEventListener('click', () => {
-  // Compute the next Wednesday at 18:00 in Taiwan, regardless of device timezone.
-  const now = new Date();
-  const taiwan = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  const next = new Date(Date.UTC(taiwan.getUTCFullYear(), taiwan.getUTCMonth(), taiwan.getUTCDate(), 10));
+const runTimeZone = 'Asia/Taipei';
+const taipeiDate = new Intl.DateTimeFormat('en-US', {
+  timeZone: runTimeZone, year: 'numeric', month: '2-digit', day: '2-digit'
+});
+const runDateLabel = new Intl.DateTimeFormat('zh-TW', {
+  timeZone: runTimeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+});
+
+function getNextRun(now = new Date()) {
+  const parts = Object.fromEntries(taipeiDate.formatToParts(now).map(part => [part.type, part.value]));
+  // Taiwan is UTC+8: Wednesday 18:00 in Taipei is Wednesday 10:00 UTC.
+  // Use only UTC operations after extracting the Taipei calendar date.
+  const next = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), 10));
   const days = (3 - next.getUTCDay() + 7) % 7;
   next.setUTCDate(next.getUTCDate() + days);
+  // At the start time itself, immediately move to the following week.
   if (next <= now) next.setUTCDate(next.getUTCDate() + 7);
+  return next;
+}
+
+function getRunCountdown(now = new Date()) {
+  const next = getNextRun(now);
+  const secondsLeft = Math.ceil((next - now) / 1000);
+  return {
+    next,
+    days: Math.floor(secondsLeft / 86400),
+    hours: Math.floor(secondsLeft / 3600) % 24,
+    minutes: Math.floor(secondsLeft / 60) % 60,
+    seconds: secondsLeft % 60
+  };
+}
+
+const countdownFields = document.querySelectorAll('[data-countdown]');
+const nextRunDate = document.querySelector('#next-run-date');
+function updateRunCountdown() {
+  const remaining = getRunCountdown();
+  countdownFields.forEach(field => {
+    field.textContent = String(remaining[field.dataset.countdown]).padStart(2, '0');
+  });
+  const isoDate = remaining.next.toISOString();
+  if (nextRunDate.dateTime !== isoDate) {
+    nextRunDate.dateTime = isoDate;
+    nextRunDate.textContent = runDateLabel.format(remaining.next);
+  }
+}
+updateRunCountdown();
+// Recalculate from the clock each tick, so delayed background ticks never accumulate drift.
+setInterval(updateRunCountdown, 1000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) updateRunCountdown();
+});
+window.addEventListener('pageshow', updateRunCountdown);
+
+document.querySelector('#calendar').addEventListener('click', () => {
+  const now = new Date();
+  const next = getNextRun(now);
   const stamp = date => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   const content = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PACE Club//Weekly Run//ZH-TW',

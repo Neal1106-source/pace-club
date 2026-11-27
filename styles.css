@@ -75,6 +75,18 @@ h2 { font-size: clamp(30px, 3.2vw, 48px); line-height: 1.55; letter-spacing: -1.
 .event-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .event-heading h2 { font-size: 42px; line-height: 1.3; margin-bottom: 38px; }
 .event-heading p { font-family: var(--display); font-size: 19px; line-height: 1.1; text-align: right; margin: 8px 0 0; }
+.run-countdown { margin: 0 0 32px; padding: 22px; background: var(--ink); color: white; border-top: 3px solid var(--green); }
+.countdown-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.countdown-heading h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.countdown-heading > span { font: 700 12px Arial, sans-serif; letter-spacing: 1px; color: var(--green); }
+.countdown-date { margin: 12px 0 22px; font-size: 14px; line-height: 1.8; }
+.countdown-date > span { display: block; color: #bdbdbd; font-size: 12px; }
+.countdown-digits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.countdown-digits > div { min-width: 0; display: flex; flex-direction: column; text-align: center; border-left: 1px solid #414141; }
+.countdown-digits > div:first-child { border-left: 0; }
+.countdown-digits dd { order: -1; margin: 0 0 10px; color: var(--green); font: 800 clamp(32px, 4.5vw, 64px)/1 var(--display); font-variant-numeric: tabular-nums; }
+.countdown-digits dt { font-size: 14px; color: #ddd; }
+.countdown-fallback { margin-bottom: 0; font-size: 14px; line-height: 1.8; }
 .event-details > div { display: grid; grid-template-columns: 120px 1fr; align-items: baseline; gap: 15px; padding: 22px 0; border-top: 1px solid var(--line); }
 .event-details span { font: 500 14px Arial, 'Noto Sans TC', sans-serif; }
 .event-details strong { font-size: 18px; font-weight: 500; }
@@ -177,6 +189,9 @@ body.modal-open { overflow: hidden; }
   .weekly-content { padding: 30px 25px; }
   .event-heading h2 { font-size: 36px; margin-bottom: 28px; }
   .event-heading p { font-size: 17px; }
+  .run-countdown { padding: 20px 16px; }
+  .countdown-digits { gap: 6px; }
+  .countdown-digits dd { font-size: clamp(32px, 10vw, 52px); }
   .event-details > div { grid-template-columns: 1fr; gap: 9px; padding: 19px 0; }
   .event-details span { font-size: 14px; color: var(--muted); }
   .event-details strong { font-size: 17px; }
